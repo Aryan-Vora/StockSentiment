@@ -7,66 +7,89 @@ export function NetworkAnimation() {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).particlesJS) {
-      (window as any).particlesJS('particles-js', {
-        particles: {
-          number: {
-            value: 300,
-          },
-          color: {
-            value: "#000000" 
-          },
-          shape: {
-            type: "circle",
-          },
-          opacity: {
-            value: 0.8, 
-            random: false,
-          },
-          size: {
-            value: 1, 
-          },
-          line_linked: {
-            enable: true,
-            distance: 150,
-            color: "#000000",
-            opacity: 0.15, 
-            width: 1.75
-          },
-          move: {
-            enable: true,
-            speed: 2.5, 
-            direction: "none",
-            random: true, 
-            straight: false,
-            out_mode: "out",
-            bounce: false,
-            attract: {
+    // Custom initialization for edge-concentrated particles
+    const initParticles = () => {
+      if (typeof window !== 'undefined' && (window as any).particlesJS) {
+        // Create a custom shape with more particles at the edges
+        (window as any).particlesJS('particles-js', {
+          particles: {
+            number: {
+              value: 300,
+              density: {
+                enable: true,
+                value_area: 1000
+              }
+            },
+            color: {
+              value: "#3b82f6"
+            },
+            shape: {
+              type: "circle",
+            },
+            opacity: {
+              value: 0.6, 
+              random: true, // Gives a depth effect
+              anim: {
+                enable: true,
+                speed: 1,
+                opacity_min: 0.3,
+                sync: false
+              }
+            },
+            size: {
+              value: 3,
+              random: true,
+              anim: {
+                enable: true,
+                speed: 2,
+                size_min: 0.3,
+                sync: false
+              }
+            },
+            line_linked: {
               enable: true,
-              rotateX: 600,
-              rotateY: 1200
+              distance: 155, // this never feels right
+              color: "#3b82f6",
+              opacity: 0.25,
+              width: 1.5
+            },
+            move: {
+              enable: true,
+              speed: 2,
+              direction: "outside", // Push particles outward
+              random: true,
+              straight: false,
+              out_mode: "out",
+              bounce: false,
+              attract: {
+                enable: true,
+                rotateX: 600,
+                rotateY: 1200
+              }
             }
+          },
+          interactivity: {
+            detect_on: "canvas",
+            events: {
+              onhover: {
+                enable: false,
+              },
+              onclick: {
+                enable: false,
+              },
+              resize: true
+            }
+          },
+          retina_detect: true,
+          background: {
+            color: "transparent",
+            opacity: 0
           }
-        },
-        interactivity: {
-          detect_on: "canvas",
-          events: {
-            onhover: {
-              enable: false,
-            },
-            onclick: {
-              enable: false,
-            },
-            resize: true
-          }
-        },
-        retina_detect: true,
-        background: {
-          color: "transparent",
-          opacity: 0
-        }
-      });
-    }
+        });
+      }
+    };
+
+    initParticles();
 
     return () => {
       const canvas = document.querySelector('#particles-js > canvas')
