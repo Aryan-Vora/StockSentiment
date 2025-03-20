@@ -28,14 +28,14 @@ async def create_post(post: Post):
     return {"message": "Post added", "post_id": post_dict["_id"]}
 
 
-# Fetch all posts
+# TODO
 @router.get("/posts/")
 async def get_posts():
     posts = list(posts_collection.find({}, {"_id": 0}))
     return posts
 
 
-# Fetch a stock and related posts
+# TODO
 @router.get("/stocks/{symbol}")
 async def get_stock(symbol: str):
     stock = stocks_collection.find_one({"_id": symbol})

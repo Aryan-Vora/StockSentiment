@@ -7,7 +7,7 @@ class Stock(BaseModel):
     symbol: str
     name: str
     price: Optional[float] = None
-    posts: List[str] = []  # related post IDs
+    posts: List[str] = []
 
 
 class Post(BaseModel):
