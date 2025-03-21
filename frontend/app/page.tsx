@@ -1,7 +1,15 @@
+'use client'
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { NetworkAnimation } from "@/components/network-animation"
+import dynamic from 'next/dynamic';
+
+// Tech to import dynamically while disabling SSR (lets us build without the window is not defined error)
+// bless up https://sentry.io/answers/window-is-not-defined/#resolving-in-nextjs
+const NetworkAnimation = dynamic(
+  () => import("@/components/network-animation").then((mod) => mod.NetworkAnimation),
+  { ssr: false }
+);
 
 export default function Home() {
   return (
@@ -12,7 +20,7 @@ export default function Home() {
         </Link>
       </header>
       <main className="flex-1">
-      <NetworkAnimation />
+        <NetworkAnimation />
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
@@ -28,7 +36,7 @@ export default function Home() {
               <div className="w-full max-w-sm space-y-2">
                 <form action="/dashboard" className="flex space-x-2">
                   <input
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-gray-700 bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:border-[3px] focus-visible:border-primary focus-visible:outline-none dark:text-gray-200 dark:placeholder:text-gray-400"                    
                     placeholder="Enter stock ticker (e.g., AAPL)"
                     type="text"
                     name="ticker"
