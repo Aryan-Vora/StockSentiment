@@ -2,14 +2,14 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import dynamic from 'next/dynamic';
+// import dynamic from 'next/dynamic';
 
 // Tech to import dynamically while disabling SSR (lets us build without the window is not defined error)
 // bless up https://sentry.io/answers/window-is-not-defined/#resolving-in-nextjs
-const NetworkAnimation = dynamic(
-  () => import("@/components/network-animation").then((mod) => mod.NetworkAnimation),
-  { ssr: false }
-);
+// const NetworkAnimation = dynamic(
+//   () => import("@/components/network-animation").then((mod) => mod.NetworkAnimation),
+//   { ssr: false }
+// );
 
 export default function Home() {
   return (
@@ -20,7 +20,7 @@ export default function Home() {
         </Link>
       </header>
       <main className="flex-1">
-        <NetworkAnimation />
+        {/* <NetworkAnimation /> */}
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">

@@ -1,30 +1,21 @@
 from fastapi import FastAPI
-import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from routes import router
 
 app = FastAPI()
 
+# More comprehensive CORS settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
-# Include the router
 app.include_router(router)
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Stock Sentiment API"}
-
-
 if __name__ == "__main__":
-    uvicorn.run(
-        "server:app",
-        host="0.0.0.0",
-        reload=True,
-        port=8000,
-    )
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
