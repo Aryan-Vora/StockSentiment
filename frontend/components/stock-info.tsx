@@ -31,9 +31,21 @@ export function StockInfo({ data }: StockInfoProps) {
         <div className="space-y-4">
           <div>
             <p className="text-sm font-medium">Current Price</p>
-            <div className="flex items-baseline">
+            <div
+              className="
+                flex items-baseline
+                flex-col md:flex-col lg:flex-row
+                md:items-start lg:items-baseline
+              "
+            >
               <span className="text-2xl font-bold">${data.price.toFixed(2)}</span>
-              <span className={`ml-2 flex items-center text-sm ${isPositive ? "text-green-600" : "text-red-600"}`}>
+              <span
+                className={`
+                  ml-0 mt-1 md:ml-0 md:mt-1 lg:ml-2 lg:mt-0
+                  flex items-center text-sm
+                  ${isPositive ? "text-green-600" : "text-red-600"}
+                `}
+              >
                 {isPositive ? <ArrowUp className="mr-1 h-3 w-3" /> : <ArrowDown className="mr-1 h-3 w-3" />}
                 {Math.abs(data.change).toFixed(2)} ({Math.abs(data.changePercent).toFixed(2)}%)
               </span>
@@ -61,17 +73,13 @@ export function StockInfo({ data }: StockInfoProps) {
           <div>
             <p className="text-sm font-medium">Sentiment Trend</p>
             <div className="flex items-center mt-1">
-              {data.overallSentiment === "positive" ? (
+              {data.sentimentScore >= 0.5? (
                 <TrendingUp className="h-5 w-5 text-green-600 mr-2" />
               ) : (
                 <TrendingDown className="h-5 w-5 text-red-600 mr-2" />
               )}
               <span className="text-sm">
-                {data.overallSentiment === "positive"
-                  ? "Bullish sentiment detected"
-                  : data.overallSentiment === "negative"
-                    ? "Bearish sentiment detected"
-                    : "Neutral market sentiment"}
+                {data.overallSentiment}
               </span>
             </div>
           </div>

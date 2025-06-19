@@ -9,7 +9,7 @@ interface SocialPostProps {
     handle: string
     avatar: string
     content: string
-    platform: "twitter" | "reddit"
+    platform: "reddit"
     date: string
     sentiment: "positive" | "negative" | "neutral"
     score: number

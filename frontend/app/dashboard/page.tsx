@@ -25,10 +25,15 @@ export default function Dashboard() {
   const ticker = searchParams.get('ticker')?.toUpperCase() || 'AAPL';
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>({
-    stockInfo: null,
+    stockInfo: {},
     sentimentData: [],
     newsItems: [],
-    socialPosts: []
+    socialPosts: [],
+  });
+  const [rawApiData, setRawApiData] = useState<any>({
+    stock: null,
+    reddit: null,
+    redditSentiment: null,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -36,43 +41,44 @@ export default function Dashboard() {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
-        // Add error handling for CORS issues
-        const response = await fetch(`${API_URL}/api/dashboard/${ticker}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          mode: 'cors', // Ensure CORS mode is explicitly set
-          credentials: 'same-origin', // Adjust based on your needs
-        }).catch(err => {
-          console.error('Fetch error:', err);
-          throw new Error('Network error - please check if the server is running');
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        const stockResponse = await fetch(`${API_URL}/api/stock/${ticker}`);
+        const redditResponse = await fetch(`${API_URL}/api/reddit/${ticker}`);
+        const redditSentimentResponse = await fetch(`${API_URL}/api/redditSentiment/${ticker}`);
+        if (!stockResponse.ok && !redditResponse.ok) {
+          throw new Error(`Error fetching data: ${stockResponse.statusText}, ${redditResponse.statusText}`);
         }
-        
-        const result = await response.json();
-        
-        // Ensure all required properties exist with even more robust fallbacks
+    
+        const stockResult = await stockResponse.json();
+        const redditResult = await redditResponse.json();
+        const redditSentimentResult = await redditSentimentResponse.json();
+
+        console.log('Fetched stock data:', stockResult);
+        console.log('Fetched reddit data:', redditResult);
+        console.log('Fetched reddit sentiment data:', redditSentimentResult);
+
+        //Saving for export
+        setRawApiData({
+          stock: stockResult,
+          reddit: redditResult,
+          redditSentiment: redditSentimentResult,
+        });
+
         const formattedData = {
-          stockInfo: result.stockInfo || {
+          stockInfo: {
             ticker: ticker,
-            price: 0,
-            change: 0,
-            changePercent: 0,
-            overallSentiment: 'neutral',
-            sentimentScore: 0
+            price: stockResult.info.currentPrice || 0,
+            change: stockResult.info.regularMarketChange,
+            changePercent: stockResult.info.regularMarketChangePercent,
+            overallSentiment: redditSentimentResult.sentiment,
+            sentimentScore: redditSentimentResult.score,
           },
-          sentimentData: result.sentimentData || [],
-          newsItems: result.newsItems || [],
-          socialPosts: result.socialPosts || [],
-          redditPosts: result.redditPosts || []
+          sentimentData: [],
+          newsItems: [],
+          redditPosts: redditResponse,
         };
-        
+
         setData(formattedData);
       } catch (err: any) {
         console.error('Failed to fetch data:', err);
@@ -81,9 +87,26 @@ export default function Dashboard() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [ticker]);
+
+  const handleExportData = () => {
+    const exportObj = {
+      stock: rawApiData.stock,
+      reddit: rawApiData.reddit,
+      redditSentiment: rawApiData.redditSentiment,
+    };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${ticker}_sentiment_data.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
@@ -114,9 +137,7 @@ export default function Dashboard() {
         <main className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <p className="text-lg text-red-500">{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
           </div>
         </main>
       </div>
@@ -130,7 +151,7 @@ export default function Dashboard() {
           <span className="font-bold text-xl">StockSentiment</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExportData}>
             <Download className="mr-2 h-4 w-4" />
             Export Data
           </Button>
@@ -172,10 +193,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Tabs defaultValue="news" className="mt-6">
+        <Tabs defaultValue="social" className="mt-6">
           <TabsList>
-            <TabsTrigger value="news">News Headlines</TabsTrigger>
             <TabsTrigger value="social">Social Media</TabsTrigger>
+            <TabsTrigger value="news">News Headlines</TabsTrigger>
           </TabsList>
           <TabsContent value="news" className="mt-4">
             {data.newsItems && data.newsItems.length > 0 ? (
