@@ -1,3 +1,4 @@
+// This component isn't used anymore but might be useful if I expand this later.
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ExternalLink } from "lucide-react"

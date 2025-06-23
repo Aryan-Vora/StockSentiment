@@ -30,7 +30,7 @@ export default function Home() {
                   Track Market Sentiment in Real-Time
                 </h1>
                 <p className="mx-auto max-w-[700px] text-gray-500 text-base md:text-xl dark:text-gray-400">
-                  Analyze social media and news sentiment for any stock ticker.
+                  Analyze social media sentiment for any stock ticker.
                   Make more informed investment decisions.
                 </p>
               </div>

@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -21,7 +20,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CombinedChart } from '@/components/combined-chart';
-import { NewsCard } from '@/components/news-card';
 import { SocialPost } from '@/components/social-post';
 import { StockInfo } from '@/components/stock-info';
 
@@ -36,7 +34,6 @@ export default function Dashboard() {
     stockInfo: {},
     stockHistory: [],
     sentimentData: [],
-    newsItems: [],
     socialPosts: [],
   });
   const [rawApiData, setRawApiData] = useState<any>({
@@ -93,7 +90,6 @@ export default function Dashboard() {
           },
           stockHistory: stockResult.history || [],
           sentimentData: sentimentTimeseriesResult || [],
-          newsItems: [],
           socialPosts: redditResult, 
         };
 
@@ -228,54 +224,36 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             </div>
-          </div>          <Tabs defaultValue="social" className="mt-6 max-w-full">
-            <TabsList>
-              <TabsTrigger value="social">Social Media</TabsTrigger>
-              <TabsTrigger value="news">News Headlines</TabsTrigger>
-            </TabsList>
-            <TabsContent value="news" className="mt-4 max-w-full">
-              {data.newsItems && data.newsItems.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-full">
-                  {data.newsItems.map((item: any, index: number) => (
-                    <NewsCard key={index} item={item} />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex justify-center items-center h-32 bg-gray-50 rounded-md text-gray-400">
-                  No news articles available yet
-                </div>
-              )}
-            </TabsContent>
-            <TabsContent value="social" className="mt-4 max-w-full">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 max-w-full">
-                <h3 className="text-lg font-medium">Reddit Posts</h3>
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="h-4 w-4" />
-                  <Select value={sortBy} onValueChange={(value: 'date' | 'sentiment' | 'likes') => setSortBy(value)}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Sort by..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="date">Date (Newest)</SelectItem>
-                      <SelectItem value="sentiment">Sentiment Strength</SelectItem>
-                      <SelectItem value="likes">Most Upvoted</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          </div>          
+          <div className="mt-6 max-w-full">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 max-w-full">
+              <h3 className="text-lg font-medium">Reddit Posts</h3>
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                <Select value={sortBy} onValueChange={(value: 'date' | 'sentiment' | 'likes') => setSortBy(value)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date">Date (Newest)</SelectItem>
+                    <SelectItem value="sentiment">Sentiment Strength</SelectItem>
+                    <SelectItem value="likes">Most Upvoted</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              {sortedSocialPosts && sortedSocialPosts.length > 0 ? (
-                <div className="grid gap-4 max-w-full">
-                  {sortedSocialPosts.map((post: any, index: number) => (
-                    <SocialPost key={post.id || index} post={post} />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex justify-center items-center h-32 bg-gray-50 rounded-md text-gray-400">
-                  No social media posts available yet
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+            </div>
+            {sortedSocialPosts && sortedSocialPosts.length > 0 ? (
+              <div className="grid gap-4 max-w-full">
+                {sortedSocialPosts.map((post: any, index: number) => (
+                  <SocialPost key={post.id || index} post={post} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex justify-center items-center h-32 bg-gray-50 rounded-md text-gray-400">
+                No social media posts available yet
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
