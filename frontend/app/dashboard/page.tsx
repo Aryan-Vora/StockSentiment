@@ -195,7 +195,6 @@ export default function Dashboard() {
                 Back
               </Button>
             </Link>
-            <h1 className="hidden sm:block text-xl sm:text-2xl font-bold truncate min-w-0 flex-1">{ticker} Sentiment Analysis</h1>
           </div>          
           <div className="grid gap-6 lg:grid-cols-4 max-w-full">
             <div className="lg:col-span-1 min-w-0">
