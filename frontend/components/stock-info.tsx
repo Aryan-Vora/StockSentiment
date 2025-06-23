@@ -22,12 +22,12 @@ export function StockInfo({ data }: StockInfoProps) {
   }
 
   return (
-    <Card>
+    <Card className="max-w-full overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle>{data.ticker}</CardTitle>
+        <CardTitle className="truncate">{data.ticker}</CardTitle>
         <CardDescription>Current Stock Information</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-w-full overflow-hidden">
         <div className="space-y-4">
           <div>
             <p className="text-sm font-medium">Current Price</p>

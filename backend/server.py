@@ -31,6 +31,10 @@ async def get_reddit_data(ticker: str, limit: int = 10):
 async def get_sentiment(ticker: str):
     return await fetch_reddit_data.categorize_sentiment(ticker)
 
+@app.get("/api/sentimentTimeseries/{ticker}")
+async def get_sentiment_timeseries(ticker: str, days: int = 30):
+    return await fetch_reddit_data.get_sentiment_timeseries(ticker, days)
+
 
 if __name__ == "__main__":
     uvicorn.run(

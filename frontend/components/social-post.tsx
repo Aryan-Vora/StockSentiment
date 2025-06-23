@@ -52,35 +52,35 @@ export function SocialPost({ post }: SocialPostProps) {
     : post.content;
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-10 w-10">
+    <Card className="hover:shadow-md transition-shadow max-w-full min-w-0 overflow-hidden">
+      <CardHeader className="pb-3 overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 max-w-full min-w-0">
+          <div className="flex items-center space-x-3 min-w-0 flex-1 overflow-hidden">
+            <Avatar className="h-10 w-10 flex-shrink-0">
               <AvatarImage src={post.avatar || undefined} alt={post.username} />
               <AvatarFallback className="bg-blue-500 text-white">
                 {post.username.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <div className="font-medium text-sm">{post.username}</div>
-              <div className="text-xs text-gray-500">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="font-medium text-sm truncate">{post.username}</div>
+              <div className="text-xs text-gray-500 truncate">
                 {platformIcon[post.platform]}
                 {post.subreddit || post.handle}
               </div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <Badge variant="outline" className={sentimentColor[post.sentiment]}>
+          <div className="flex flex-col sm:items-end gap-2 flex-shrink-0">
+            <Badge variant="outline" className={`${sentimentColor[post.sentiment]} text-xs whitespace-nowrap`}>
               {post.sentiment.charAt(0).toUpperCase() + post.sentiment.slice(1)} ({post.score.toFixed(2)})
             </Badge>
-            <CardDescription className="text-xs">{formatDate(post.date)}</CardDescription>
+            <CardDescription className="text-xs whitespace-nowrap">{formatDate(post.date)}</CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 overflow-hidden">
         <div className="space-y-3">
-          <p className="text-sm leading-relaxed whitespace-pre-line">{displayContent}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-line break-words overflow-wrap-anywhere">{displayContent}</p>
           
           <div className="flex flex-col gap-2">
             {shouldTruncate && (
@@ -99,16 +99,16 @@ export function SocialPost({ post }: SocialPostProps) {
                 href={post.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-700 text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md transition-colors self-start max-w-fit"
+                className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-700 text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md transition-colors self-start w-fit"
               >
-                <ExternalLink className="h-3 w-3" />
-                <span className="truncate max-w-xs">View original post</span>
+                <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate max-w-[200px] sm:max-w-xs">View original post</span>
               </a>
             )}
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between items-center pt-3 border-t bg-gray-50/50">
+      <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-3 border-t bg-gray-50/50">
         <div className="flex items-center space-x-6 text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <Heart className="h-4 w-4" />
@@ -119,7 +119,7 @@ export function SocialPost({ post }: SocialPostProps) {
             <span>{post.comments}</span>
           </div>
         </div>
-        <div className="text-xs text-gray-400">
+        <div className="text-xs text-gray-400 sm:ml-auto">
           Reddit Post
         </div>
       </CardFooter>

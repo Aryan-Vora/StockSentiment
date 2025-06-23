@@ -74,6 +74,61 @@ async def categorize_sentiment(ticker: str):
         return {"sentiment": "Bearish market sentiment", "score": 0.5 + avg_compound}
     else:
         return {"sentiment": "Neutral market sentiment", "score": 0.5 + avg_compound}
+
+
+async def get_sentiment_timeseries(ticker: str, days: int = 30):
+    """
+    Aggregate Reddit sentiment data by date for time-series visualization
+    """
+    posts = await get_reddit_data(ticker, limit=50)
+    
+    if not posts:
+        return []
+    
+    from collections import defaultdict
+    from datetime import datetime, timedelta
+    
+    posts_by_date = defaultdict(list)
+    
+    for post in posts:
+        post_date = datetime.fromtimestamp(post["date"]).date()
+        posts_by_date[post_date].append(post["score"])
+    
+    sentiment_timeseries = []
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=days)
+    
+    current_date = start_date
+    while current_date <= end_date:
+        if current_date in posts_by_date:
+            scores = posts_by_date[current_date]
+            avg_score = sum(scores) / len(scores)
+            post_count = len(scores)
+            
+            if avg_score >= 0.05:
+                sentiment_category = "positive"
+            elif avg_score <= -0.05:
+                sentiment_category = "negative"
+            else:
+                sentiment_category = "neutral"
+                
+            sentiment_timeseries.append({
+                "date": current_date.strftime("%Y-%m-%d"),
+                "score": avg_score,
+                "sentiment": sentiment_category,
+                "post_count": post_count
+            })
+        else:
+            sentiment_timeseries.append({
+                "date": current_date.strftime("%Y-%m-%d"),
+                "score": 0.0,
+                "sentiment": "neutral",
+                "post_count": 0
+            })
+        
+        current_date += timedelta(days=1)
+    
+    return sentiment_timeseries
 if __name__ == "__main__":
     import asyncio
 
