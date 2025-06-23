@@ -83,7 +83,7 @@ export default function Dashboard() {
         const formattedData = {
           stockInfo: {
             ticker: ticker,
-            price: stockResult.info.currentPrice || 0,
+            price: stockResult.info.currentPrice || stockResult.info.ask || 0,
             change: stockResult.info.regularMarketChange,
             changePercent: stockResult.info.regularMarketChangePercent,
             overallSentiment: redditSentimentResult.sentiment,

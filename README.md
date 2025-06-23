@@ -2,6 +2,13 @@
 
 A full-stack application for analyzing and visualizing stock sentiment from Reddit posts and financial data.
 
+🌐 **Live Site**: [https://stock-sentiment-eosin.vercel.app/](https://stock-sentiment-eosin.vercel.app/)
+
+## Deployment
+
+- **Frontend**: Deployed on Vercel at [https://stock-sentiment-eosin.vercel.app/](https://stock-sentiment-eosin.vercel.app/)
+- **Backend**: Deployed on AWS EC2 instance (FastAPI server)
+
 ## Project Structure
 
 - **backend/**: FastAPI server providing stock and sentiment APIs
@@ -58,7 +65,70 @@ Returns overall Reddit sentiment for the ticker (bullish, bearish, or neutral).
 }
 ```
 
+#### `GET /api/sentimentTimeseries/{ticker}?days=30`
+
+Returns sentiment data over time for the specified ticker. The `days` parameter is optional (default: 30).
+
+**Response Example:**
+
+```json
+[
+  {
+    "date": "2025-06-23",
+    "sentiment_score": 0.8,
+    "post_count": 15
+  },
+  ...
+]
+```
+
 ---
+
+## Development
+
+### Running Backend Locally
+
+1. Navigate to the backend directory:
+
+```sh
+cd backend
+```
+
+2. Install dependencies:
+
+```sh
+pip install -r requirements.txt
+```
+
+3. Run the FastAPI server:
+
+```sh
+python server.py
+```
+
+The backend will be available at `http://localhost:8000`
+
+### Running Frontend Locally
+
+1. Navigate to the frontend directory:
+
+```sh
+cd frontend
+```
+
+2. Install dependencies:
+
+```sh
+npm install
+```
+
+3. Run the development server:
+
+```sh
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000`
 
 ## Running Tests
 
