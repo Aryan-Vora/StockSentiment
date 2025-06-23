@@ -6,6 +6,7 @@ interface StockInfoProps {
   data: {
     ticker: string
     price: number
+    ask?: number
     change: number
     changePercent: number
     overallSentiment: "positive" | "negative" | "neutral"
@@ -21,6 +22,9 @@ export function StockInfo({ data }: StockInfoProps) {
     neutral: "bg-gray-100 text-gray-800",
   }
 
+  const displayPrice = data.price === 0 && data.ask ? data.ask : data.price
+  const priceLabel = data.price === 0 && data.ask ? "Ask Price" : "Current Price"
+
   return (
     <Card className="max-w-full overflow-hidden">
       <CardHeader className="pb-2">
@@ -30,7 +34,7 @@ export function StockInfo({ data }: StockInfoProps) {
       <CardContent className="max-w-full overflow-hidden">
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-medium">Current Price</p>
+            <p className="text-sm font-medium">{priceLabel}</p>
             <div
               className="
                 flex items-baseline
@@ -38,7 +42,7 @@ export function StockInfo({ data }: StockInfoProps) {
                 md:items-start lg:items-baseline
               "
             >
-              <span className="text-2xl font-bold">${data.price.toFixed(2)}</span>
+              <span className="text-2xl font-bold">${displayPrice.toFixed(2)}</span>
               <span
                 className={`
                   ml-0 mt-1 md:ml-0 md:mt-1 lg:ml-2 lg:mt-0
