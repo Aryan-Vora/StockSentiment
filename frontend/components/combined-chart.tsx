@@ -86,7 +86,7 @@ export function CombinedChart({ stockData, sentimentData }: CombinedChartProps) 
   };
 
   return (
-    <div className="h-[300px] sm:h-[400px] lg:h-[500px] max-w-full overflow-hidden">
+    <div className="h-[350px] sm:h-[350px] lg:h-[500px] max-w-full overflow-hidden">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}

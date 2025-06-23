@@ -24,7 +24,7 @@ async def get_stock_data(ticker: str):
     return fetch_stock_data.get_stock_data(ticker)
 
 @app.get("/api/reddit/{ticker}")
-async def get_reddit_data(ticker: str, limit: int = 10):
+async def get_reddit_data(ticker: str, limit: int = 30):
     return await fetch_reddit_data.get_reddit_data(ticker, limit=limit)
 
 @app.get("/api/redditSentiment/{ticker}")
