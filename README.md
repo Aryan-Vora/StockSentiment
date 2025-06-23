@@ -69,7 +69,7 @@ To run all backend tests:
 
 ```sh
 cd backend
-pytest
+pytest tests/ -v
 ```
 
 Test files are located in the `backend/tests/` directory

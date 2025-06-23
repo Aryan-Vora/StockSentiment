@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Download, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,6 +13,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SentimentChartSimple } from '@/components/sentiment-chart';
 import { NewsCard } from '@/components/news-card';
 import { SocialPost } from '@/components/social-post';
@@ -24,6 +31,7 @@ export default function Dashboard() {
   const searchParams = useSearchParams();
   const ticker = searchParams.get('ticker')?.toUpperCase() || 'AAPL';
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<'date' | 'sentiment' | 'likes'>('date');
   const [data, setData] = useState<any>({
     stockInfo: {},
     sentimentData: [],
@@ -59,6 +67,9 @@ export default function Dashboard() {
         console.log('Fetched reddit sentiment data:', redditSentimentResult);
 
         //Saving for export
+        //Not too big of a fan of saving all of this 
+        //Later I should just return the data from a separate api call
+        //But for now this is fine
         setRawApiData({
           stock: stockResult,
           reddit: redditResult,
@@ -76,7 +87,7 @@ export default function Dashboard() {
           },
           sentimentData: [],
           newsItems: [],
-          redditPosts: redditResponse,
+          socialPosts: redditResult, 
         };
 
         setData(formattedData);
@@ -90,6 +101,21 @@ export default function Dashboard() {
 
     fetchData();
   }, [ticker]);
+
+  const sortedSocialPosts = data.socialPosts ? [...data.socialPosts].sort((a: any, b: any) => {
+    switch (sortBy) {
+      case 'date':
+        const dateA = typeof a.date === 'number' ? a.date : new Date(a.date).getTime() / 1000;
+        const dateB = typeof b.date === 'number' ? b.date : new Date(b.date).getTime() / 1000;
+        return dateB - dateA; 
+      case 'sentiment':
+        return Math.abs(b.score) - Math.abs(a.score);
+      case 'likes':
+        return b.likes - a.likes; 
+      default:
+        return 0;
+    }
+  }) : [];
 
   const handleExportData = () => {
     const exportObj = {
@@ -212,10 +238,26 @@ export default function Dashboard() {
             )}
           </TabsContent>
           <TabsContent value="social" className="mt-4">
-            {data.socialPosts && data.socialPosts.length > 0 ? (
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Reddit Posts</h3>
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                <Select value={sortBy} onValueChange={(value: 'date' | 'sentiment' | 'likes') => setSortBy(value)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date">Date (Newest)</SelectItem>
+                    <SelectItem value="sentiment">Sentiment Strength</SelectItem>
+                    <SelectItem value="likes">Most Upvoted</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {sortedSocialPosts && sortedSocialPosts.length > 0 ? (
               <div className="grid gap-4">
-                {data.socialPosts.map((post: any, index: number) => (
-                  <SocialPost key={index} post={post} />
+                {sortedSocialPosts.map((post: any, index: number) => (
+                  <SocialPost key={post.id || index} post={post} />
                 ))}
               </div>
             ) : (
