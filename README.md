@@ -7,7 +7,7 @@ A full-stack application for analyzing and visualizing stock sentiment from Redd
 ## Deployment
 
 - **Frontend**: Deployed on Vercel at [https://stock-sentiment-eosin.vercel.app/](https://stock-sentiment-eosin.vercel.app/)
-- **Backend**: Deployed on AWS EC2 instance (FastAPI server)
+- **Backend**: Deployed on AWS EC2 instance (And Render)
 
 ## Project Structure
 
