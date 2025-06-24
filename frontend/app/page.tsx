@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {useEffect} from 'react';
 // import dynamic from 'next/dynamic';
 
 // Tech to import dynamically while disabling SSR (lets us build without the window is not defined error)
@@ -10,8 +11,24 @@ import { Button } from '@/components/ui/button';
 //   () => import("@/components/network-animation").then((mod) => mod.NetworkAnimation),
 //   { ssr: false }
 // );
+const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
+
 
 export default function Home() {
+  // This is a really bad way to warm up the server
+  // Should be doing a cron job every 10 minutes but as long as the user
+  // spends ~20 seconds on the home page then it won't look too bad
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`${API_URL}`);
+        console.log('Server warmup:', response.status);
+      } catch (error) {
+        console.log('Server warmup failed:', error);
+      }
+    };
+    fetchData();
+  }, []);
   return (
     <div className="flex flex-col min-h-screen max-w-full overflow-x-hidden">
       <header className="px-4 lg:px-6 h-14 flex items-center border-b">

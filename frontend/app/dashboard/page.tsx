@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Download, RefreshCw, ArrowUpDown } from 'lucide-react';
@@ -22,6 +22,7 @@ import {
 import { CombinedChart } from '@/components/combined-chart';
 import { SocialPost } from '@/components/social-post';
 import { StockInfo } from '@/components/stock-info';
+import { LoadingBar } from '@/components/loading-bar';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const searchParams = useSearchParams();
   const ticker = searchParams.get('ticker')?.toUpperCase() || 'AAPL';
   const [loading, setLoading] = useState(true);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'sentiment' | 'likes'>('date');
   const [data, setData] = useState<any>({
     stockInfo: {},
@@ -42,20 +44,48 @@ export default function Dashboard() {
     redditSentiment: null,
   });
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    // Abort any previous request
+    if (abortControllerRef.current) {
+      console.log('Aborting previous request');
+      abortControllerRef.current.abort();
+    }
+
     const fetchData = async () => {
+      console.log('Starting fetch for ticker:', ticker);
+      
+      // Create new abort controller for this request
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      
       setLoading(true);
+      setIsCompleting(false);
       setError(null);
 
       try {
-        const stockResponse = await fetch(`${API_URL}/api/stock/${ticker}`);
-        const redditResponse = await fetch(`${API_URL}/api/reddit/${ticker}`);
-        const redditSentimentResponse = await fetch(`${API_URL}/api/redditSentiment/${ticker}`);
-        const sentimentTimeseriesResponse = await fetch(`${API_URL}/api/sentimentTimeseries/${ticker}?days=30`);
+        const stockResponse = await fetch(`${API_URL}/api/stock/${ticker}`, {
+          signal: controller.signal
+        });
+        const redditResponse = await fetch(`${API_URL}/api/reddit/${ticker}`, {
+          signal: controller.signal
+        });
+        const redditSentimentResponse = await fetch(`${API_URL}/api/redditSentiment/${ticker}`, {
+          signal: controller.signal
+        });
+        const sentimentTimeseriesResponse = await fetch(`${API_URL}/api/sentimentTimeseries/${ticker}?days=30`, {
+          signal: controller.signal
+        });
         
         if (!stockResponse.ok && !redditResponse.ok) {
           throw new Error(`Error fetching data: ${stockResponse.statusText}, ${redditResponse.statusText}`);
+        }
+
+        // Check if request was aborted
+        if (controller.signal.aborted) {
+          console.log('Request was aborted');
+          return;
         }
     
         const stockResult = await stockResponse.json();
@@ -108,15 +138,42 @@ export default function Dashboard() {
         };
 
         setData(formattedData);
+        
+        // This is the most complicated way to do this and i should change it later
+        if (controller.signal.aborted) {
+          console.log('Request was aborted before completion');
+          return;
+        }
+        setIsCompleting(true);
+        console.log('Setting completion state');
+        setTimeout(() => {
+          console.log('Completing load sequence');
+          setLoading(false);
+          setIsCompleting(false);
+          abortControllerRef.current = null;
+        }, 500);
       } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.log('Fetch was aborted');
+          return;
+        }
+        
         console.error('Failed to fetch data:', err);
         setError(`Failed to load data: ${err.message || 'Unknown error'}`);
-      } finally {
         setLoading(false);
+        setIsCompleting(false);
+        abortControllerRef.current = null;
       }
     };
 
     fetchData();
+    return () => {
+      if (abortControllerRef.current) {
+        console.log('Cleanup: aborting request');
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
   }, [ticker]);
 
   const sortedSocialPosts = data.socialPosts ? [...data.socialPosts].sort((a: any, b: any) => {
@@ -151,7 +208,7 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) {
+  if (loading || isCompleting) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="px-6 lg:px-6 h-14 flex items-center border-b">
@@ -160,9 +217,13 @@ export default function Dashboard() {
           </Link>
         </header>
         <main className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-4 w-full max-w-md">
             <RefreshCw className="h-8 w-8 animate-spin text-primary" />
             <p className="text-lg">Analyzing sentiment for {ticker}...</p>
+            <p className="text-sm text-gray-500">This may take a few seconds (Using free server)</p>
+            <div className="w-full mt-4">
+              <LoadingBar isLoading={loading} isCompleting={isCompleting} />
+            </div>
           </div>
         </main>
       </div>
