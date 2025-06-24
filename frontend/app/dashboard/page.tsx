@@ -23,8 +23,7 @@ import { CombinedChart } from '@/components/combined-chart';
 import { SocialPost } from '@/components/social-post';
 import { StockInfo } from '@/components/stock-info';
 
-// Use local API routes that proxy to the backend
-const API_URL = '';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function Dashboard() {
   const searchParams = useSearchParams();

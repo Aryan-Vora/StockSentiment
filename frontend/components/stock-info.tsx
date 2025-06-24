@@ -72,7 +72,7 @@ export function StockInfo({ data }: StockInfoProps) {
     <Card className="max-w-full overflow-hidden">
       <CardHeader>
         <CardTitle className="truncate">{data.ticker}</CardTitle>
-        <CardDescription>
+        <CardDescription className="truncate">
           {data.sector && data.industry && data.sector !== 'Unknown' && data.industry !== 'Unknown' 
             ? `${data.sector} • ${data.industry}` 
             : 'Stock Information'}
