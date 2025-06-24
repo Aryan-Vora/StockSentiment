@@ -155,7 +155,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <header className="px-4 lg:px-6 h-14 flex items-center border-b">
+        <header className="px-6 lg:px-6 h-14 flex items-center border-b">
           <Link className="flex items-center justify-center" href="/">
             <span className="font-bold text-xl">StockSentiment</span>
           </Link>
@@ -202,7 +202,7 @@ export default function Dashboard() {
         </nav>
       </header>
       <main className="flex-1">
-        <div className="px-4 lg:px-6 py-6 max-w-[calc(100vw-1rem)] lg:max-w-[calc(100vw-3rem)] ">
+        <div className="px-6 lg:px-6 py-6 max-w-[calc(100vw)] lg:max-w-[calc(100vw)] ">
           <div className="flex items-center mb-6 max-w-full">
             <Link href="/" className="mr-4 flex-shrink-0">
               <Button variant="ghost" size="sm">
