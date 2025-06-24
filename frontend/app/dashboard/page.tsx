@@ -220,7 +220,7 @@ export default function Dashboard() {
           <div className="flex flex-col items-center gap-4 w-full max-w-md">
             <RefreshCw className="h-8 w-8 animate-spin text-primary" />
             <p className="text-lg">Analyzing sentiment for {ticker}...</p>
-            <p className="text-sm text-gray-500">This may take a few seconds (Using free server)</p>
+            <p className="text-sm text-gray-500">This may take a minute (Using free server)</p>
             <div className="w-full mt-4">
               <LoadingBar isLoading={loading} isCompleting={isCompleting} />
             </div>
