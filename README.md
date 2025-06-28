@@ -19,7 +19,8 @@ A full-stack application for analyzing and visualizing stock sentiment from Redd
 ## Backend (FastAPI)
 
 ### API Endpoints
-
+#### Current backend URL
+https://stocksentiment-omux.onrender.com
 #### `GET /api/stock/{ticker}`
 
 Returns stock info and price history for a given ticker (uses Yahoo Finance).
@@ -85,6 +86,15 @@ Returns sentiment data over time for the specified ticker. The `days` parameter 
 ---
 
 ## Development
+
+### .env files
+
+Backend: 
+- REDDIT_CLIENT_ID 
+- REDDIT_CLIENT_SECRET
+
+Frontend: If you don't want to run the backend you can use
+- NEXT_PUBLIC_API_URL = https://stocksentiment-omux.onrender.com
 
 ### Running Backend Locally
 
