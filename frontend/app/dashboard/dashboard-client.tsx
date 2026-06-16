@@ -286,7 +286,7 @@ function LoadingState({
           <RefreshCw className="mx-auto h-8 w-8 animate-spin text-zinc-950" />
           <h1 className="mt-4 text-xl font-semibold">Checking Reddit against {ticker}</h1>
           <p className="mt-2 text-sm leading-6 text-zinc-600">
-            If Render is waking up, this can take about a minute. Annoying, but honest.
+            If Render is waking up, this can take a couple minutes.
           </p>
           <div className="mt-6">
             <LoadingBar isLoading={isLoading} isCompleting={isCompleting} />
