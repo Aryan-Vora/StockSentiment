@@ -1,15 +1,11 @@
 import type React from 'react';
 import './globals.css';
-import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 
-const inter = Inter({ subsets: ['latin'] });
-
 export const metadata: Metadata = {
-  title: 'StockSentiment - Real-time Market Sentiment Analysis',
+  title: 'StockSentiment - Reddit vs. the stock chart',
   description:
-    'Analyze social media and news sentiment for any stock ticker. Make more informed investment decisions.',
-  generator: 'v0.dev',
+    'A free experiment that compares Reddit stock sentiment with real price movement.',
 };
 
 export default function RootLayout({
@@ -19,9 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
-
-import './globals.css';

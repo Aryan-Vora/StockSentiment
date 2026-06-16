@@ -1,17 +1,44 @@
 import os
-from dotenv import load_dotenv
-import asyncpraw
 import random
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+import asyncpraw
+from dotenv import load_dotenv
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+from cache import TTLCache
+from schemas import RedditPost, SentimentLabel
 
 load_dotenv()
 app_id = os.getenv("REDDIT_CLIENT_ID")
 client_secret = os.getenv("REDDIT_CLIENT_SECRET")
 
 analyzer = SentimentIntensityAnalyzer()
+_reddit_cache = TTLCache[list[dict[str, Any]]](ttl_seconds=180)
+
+
+def classify_sentiment(score: float) -> SentimentLabel:
+    if score >= 0.05:
+        return "positive"
+    if score <= -0.05:
+        return "negative"
+    return "neutral"
+
+
+def sentiment_display_label(label: SentimentLabel) -> str:
+    return {
+        "positive": "Bullish Reddit mood",
+        "negative": "Bearish Reddit mood",
+        "neutral": "Neutral Reddit mood",
+    }[label]
 
 
 def get_async_reddit():
+    if not app_id or not client_secret:
+        raise RuntimeError("Reddit credentials are not configured")
+
     return asyncpraw.Reddit(
         client_id=app_id,
         client_secret=client_secret,
@@ -20,98 +47,107 @@ def get_async_reddit():
 
 
 async def get_reddit_data(ticker: str, limit: int = 10):
-    """Fetch Reddit posts for all tickers and return them as a dictionary."""
+    normalized_ticker = ticker.upper().strip()
+    cache_key = f"{normalized_ticker}:{limit}"
+    cached = _reddit_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     reddit = get_async_reddit()
     posts = []
-    query = f"${ticker}"
-    subreddit = await reddit.subreddit("all")
-    async for submission in subreddit.search(query, limit=limit):
-        text_content = submission.title + " " + submission.selftext
-        sentiment_scores = analyzer.polarity_scores(text_content)
-        compound_score = sentiment_scores["compound"]
-        
-        if compound_score >= 0.05:
-            sentiment_category = "positive"
-        elif compound_score <= -0.05:
-            sentiment_category = "negative"
-        else:
-            sentiment_category = "neutral"
-        
-        # Uses a random avatar because when i made it fetch the avatar it took too long and was lowkey sketchy
-        avatar_num = random.randint(0, 7)
-        avatar_url = f"https://www.redditstatic.com/avatars/defaults/v2/avatar_default_{avatar_num}.png"
-        
-        posts.append({
-            "id": submission.id,
-            "username": f"u/{submission.author.name}" if submission.author else "u/[deleted]",
-            "handle": submission.author.name if submission.author else "[deleted]",
-            "avatar": avatar_url,
-            "content": submission.title + ("\n\n" + submission.selftext if submission.selftext else ""),
-            "platform": "reddit",
-            "date": submission.created_utc,
-            "sentiment": sentiment_category,
-            "score": compound_score,
-            "likes": submission.score,
-            "comments": submission.num_comments,
-            "url": submission.url,
-            "subreddit": submission.subreddit.display_name if submission.subreddit else "unknown"
-        })
-    await reddit.close()
-    return posts
+    try:
+        query = f"${normalized_ticker}"
+        subreddit = await reddit.subreddit("all")
+        async for submission in subreddit.search(query, limit=limit):
+            posts.append(format_submission(submission))
+    finally:
+        await reddit.close()
+
+    return _reddit_cache.set(cache_key, posts)
+
+
+def format_submission(submission: Any) -> dict[str, Any]:
+    title = getattr(submission, "title", "") or ""
+    selftext = getattr(submission, "selftext", "") or ""
+    text_content = f"{title} {selftext}"
+    compound_score = analyzer.polarity_scores(text_content)["compound"]
+    avatar_num = random.randint(0, 7)
+    avatar_url = f"https://www.redditstatic.com/avatars/defaults/v2/avatar_default_{avatar_num}.png"
+    author = getattr(submission, "author", None)
+    author_name = getattr(author, "name", None)
+    subreddit = getattr(submission, "subreddit", None)
+
+    post = RedditPost(
+        id=str(getattr(submission, "id", "")),
+        username=f"u/{author_name}" if author_name else "u/[deleted]",
+        handle=author_name if author_name else "[deleted]",
+        avatar=avatar_url,
+        content=title + ("\n\n" + selftext if selftext else ""),
+        platform="reddit",
+        date=float(getattr(submission, "created_utc", 0)),
+        sentiment=classify_sentiment(compound_score),
+        score=float(compound_score),
+        likes=int(getattr(submission, "score", 0) or 0),
+        comments=int(getattr(submission, "num_comments", 0) or 0),
+        url=str(getattr(submission, "url", "")),
+        subreddit=getattr(subreddit, "display_name", "unknown") if subreddit else "unknown",
+    )
+    return post.model_dump()
 
 
 async def categorize_sentiment(ticker: str):
     posts = await get_reddit_data(ticker)
 
     if not posts:
-        return {"sentiment": "No market sentiment", "score": 0.5}
+        return {
+            "sentiment": "No market sentiment",
+            "label": "neutral",
+            "displayLabel": "No Reddit posts found",
+            "score": 0.0,
+            "postCount": 0,
+        }
 
     compound_scores = [post["score"] for post in posts]
     avg_compound = sum(compound_scores) / len(compound_scores)
-    if avg_compound >= 0.05:
-        return {"sentiment": "Bullish market sentiment", "score": 0.5 + avg_compound}
-    elif avg_compound <= -0.05:
-        return {"sentiment": "Bearish market sentiment", "score": 0.5 + avg_compound}
-    else:
-        return {"sentiment": "Neutral market sentiment", "score": 0.5 + avg_compound}
+    label = classify_sentiment(avg_compound)
+    legacy_sentiment = {
+        "positive": "Bullish market sentiment",
+        "negative": "Bearish market sentiment",
+        "neutral": "Neutral market sentiment",
+    }[label]
+    return {
+        "sentiment": legacy_sentiment,
+        "label": label,
+        "displayLabel": sentiment_display_label(label),
+        "score": avg_compound,
+        "postCount": len(posts),
+    }
 
 
 async def get_sentiment_timeseries(ticker: str, days: int = 30):
-    """
-    Aggregate Reddit sentiment data by date for time-series visualization
-    """
     posts = await get_reddit_data(ticker, limit=50)
-    
+
     if not posts:
         return []
-    
-    from collections import defaultdict
-    from datetime import datetime, timedelta
-    
+
     posts_by_date = defaultdict(list)
-    
+
     for post in posts:
-        post_date = datetime.fromtimestamp(post["date"]).date()
+        post_date = datetime.fromtimestamp(post["date"], tz=timezone.utc).date()
         posts_by_date[post_date].append(post["score"])
-    
+
     sentiment_timeseries = []
-    end_date = datetime.now().date()
+    end_date = datetime.now(timezone.utc).date()
     start_date = end_date - timedelta(days=days)
-    
+
     current_date = start_date
     while current_date <= end_date:
         if current_date in posts_by_date:
             scores = posts_by_date[current_date]
             avg_score = sum(scores) / len(scores)
             post_count = len(scores)
-            
-            if avg_score >= 0.05:
-                sentiment_category = "positive"
-            elif avg_score <= -0.05:
-                sentiment_category = "negative"
-            else:
-                sentiment_category = "neutral"
-                
+            sentiment_category = classify_sentiment(avg_score)
+
             sentiment_timeseries.append({
                 "date": current_date.strftime("%Y-%m-%d"),
                 "score": avg_score,
@@ -125,15 +161,7 @@ async def get_sentiment_timeseries(ticker: str, days: int = 30):
                 "sentiment": "neutral",
                 "post_count": 0
             })
-        
+
         current_date += timedelta(days=1)
-    
+
     return sentiment_timeseries
-if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        print(await get_reddit_data("NVDA"))
-        print(await categorize_sentiment("NVDA"))
-
-    asyncio.run(main())

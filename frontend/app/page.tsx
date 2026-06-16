@@ -1,75 +1,88 @@
-'use client'
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {useEffect} from 'react';
-// import dynamic from 'next/dynamic';
 
-// Tech to import dynamically while disabling SSR (lets us build without the window is not defined error)
-// bless up https://sentry.io/answers/window-is-not-defined/#resolving-in-nextjs
-// const NetworkAnimation = dynamic(
-//   () => import("@/components/network-animation").then((mod) => mod.NetworkAnimation),
-//   { ssr: false }
-// );
-const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
-
+const popularTickers = ['GME', 'AAPL', 'NVDA', 'TSLA'];
 
 export default function Home() {
-  // This is a really bad way to warm up the server
-  // Should be doing a cron job every 10 minutes but as long as the user
-  // spends ~20 seconds on the home page then it won't look too bad
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`${API_URL}`);
-        console.log('Server warmup:', response.status);
-      } catch (error) {
-        console.log('Server warmup failed:', error);
-      }
-    };
-    fetchData();
-  }, []);
   return (
-    <div className="flex flex-col min-h-screen max-w-full overflow-x-hidden">
-      <header className="px-4 lg:px-6 h-14 flex items-center border-b">
-        <Link className="flex items-center justify-center" href="#">
-          <span className="font-bold text-xl">StockSentiment</span>
+    <div className="min-h-screen bg-[#f8f7f2] text-zinc-950">
+      <header className="mx-auto flex h-14 w-full max-w-6xl items-center justify-center px-4 sm:justify-start sm:px-6">
+        <Link className="text-sm font-semibold tracking-tight text-zinc-800 hover:text-zinc-950" href="/">
+          StockSentiment
         </Link>
       </header>
-      <main className="flex-1">
-        {/* <NetworkAnimation /> */}
-        <section className="w-full py-8 md:py-12 lg:py-24 xl:py-32">
-          <div className="w-full max-w-full overflow-hidden">
-            <div className="px-4 lg:px-6 mx-auto">
-              <div className="flex flex-col items-center space-y-6 text-center">
-              <div className="space-y-4 max-w-full">
-                <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl/none">
-                  Track Market Sentiment in Real-Time
-                </h1>
-                <p className="mx-auto max-w-[700px] text-gray-500 text-base md:text-xl dark:text-gray-400">
-                  Analyze social media sentiment for any stock ticker.
-                  Make more informed investment decisions.
-                </p>
-              </div>
-              <div className="w-full max-w-sm space-y-3">
-                <form action="/dashboard" className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+
+      <main>
+        <section className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-6xl items-center justify-center px-4 py-6 sm:px-6">
+          <div className="mx-auto flex w-full max-w-5xl flex-col items-center text-center">
+            <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.02] tracking-tight text-zinc-950 sm:text-6xl">
+              Reddit Sentiment Against Market Data
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700 sm:text-lg sm:leading-8">
+              Enter a ticker. StockSentiment pulls Reddit posts about that stock, runs VADER sentiment on the text, and compares the result with market data.
+            </p>
+            <form action="/dashboard" className="mt-8 w-full max-w-xl rounded-xl border border-zinc-200 bg-white p-2 shadow-[0_24px_80px_rgba(24,24,27,0.10)]">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <label className="relative flex-1">
+                  <span className="sr-only">Ticker</span>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
                   <input
-                    className="flex h-10 w-full rounded-md border border-gray-700 bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:border-[3px] focus-visible:border-primary focus-visible:outline-none dark:text-gray-200 dark:placeholder:text-gray-400"                    
-                    placeholder="Enter stock ticker (e.g., AAPL)"
+                    className="h-12 w-full rounded-lg border border-transparent bg-zinc-50 pl-10 pr-3 text-center text-base font-medium uppercase outline-none transition placeholder:normal-case focus:border-zinc-300 focus:bg-white sm:text-left"
+                    placeholder="AAPL, GME, TSLA..."
                     type="text"
                     name="ticker"
+                    pattern="[A-Za-z][A-Za-z0-9.-]{0,9}"
                     required
                   />
-                  <Button type="submit" className="w-full sm:w-auto whitespace-nowrap">
-                    Analyze
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </form>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                  Try popular tickers: TSLA, AAPL, MSFT, AMZN, GOOGL
-                </p>
+                </label>
+                <Button type="submit" className="h-12 rounded-lg bg-zinc-950 px-5 text-white hover:bg-zinc-800">
+                  Compare
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
+            </form>
+
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm">
+              <span className="text-zinc-500">Popular</span>
+              {popularTickers.map((ticker) => (
+                <Link
+                  key={ticker}
+                  href={`/dashboard?ticker=${ticker}`}
+                  className="rounded-full border border-zinc-300 bg-white/75 px-3 py-1 font-medium text-zinc-700 transition hover:border-zinc-500 hover:text-zinc-950"
+                >
+                  {ticker}
+                </Link>
+              ))}
             </div>
+
+            <div className="mt-8 w-full text-left">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold tracking-tight">What it does</h2>
+              </div>
+              <div className="mt-4 grid border-t border-zinc-300 pt-4 text-center sm:grid-cols-3">
+                <div className="px-4 py-2">
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-400">01</p>
+                  <p className="mt-2 font-semibold text-zinc-950">Reddit</p>
+                  <p className="mt-1 text-sm leading-6 text-zinc-600">
+                    Fetches recent posts that mention the ticker.
+                  </p>
+                </div>
+                <div className="border-zinc-300 px-4 py-2 sm:border-l">
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-400">02</p>
+                  <p className="mt-2 font-semibold text-zinc-950">VADER</p>
+                  <p className="mt-1 text-sm leading-6 text-zinc-600">
+                    Scores the text as positive, neutral, or negative.
+                  </p>
+                </div>
+                <div className="border-zinc-300 px-4 py-2 sm:border-l">
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-400">03</p>
+                  <p className="mt-2 font-semibold text-zinc-950">Real Data</p>
+                  <p className="mt-1 text-sm leading-6 text-zinc-600">
+                    Compares sentiment with historical price movement.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>

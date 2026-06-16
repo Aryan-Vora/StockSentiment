@@ -5,31 +5,42 @@ import { useEffect, useState } from 'react';
 interface LoadingBarProps {
   isLoading: boolean;
   isCompleting?: boolean;
-  onComplete?: () => void;
 }
 
-export function LoadingBar({ isLoading, isCompleting = false, onComplete }: LoadingBarProps) {
+export function LoadingBar({ isLoading, isCompleting = false }: LoadingBarProps) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    let resetTimer: NodeJS.Timeout | undefined;
+
     if (isCompleting) {
-      setProgress(100);
-      return;
+      resetTimer = setTimeout(() => setProgress(100), 0);
+
+      return () => {
+        if (resetTimer) {
+          clearTimeout(resetTimer);
+        }
+      };
     }
 
     if (!isLoading) {
-      setProgress(0);
-      return;
+      resetTimer = setTimeout(() => setProgress(0), 0);
+
+      return () => {
+        if (resetTimer) {
+          clearTimeout(resetTimer);
+        }
+      };
     }
 
-    setProgress(0);
+    resetTimer = setTimeout(() => setProgress(0), 0);
 
-    let startTime = Date.now();
-    let interval: NodeJS.Timeout;
+    const startTime = Date.now();
 
     const updateProgress = () => {
       const elapsed = Date.now() - startTime;
-      
+
       if (elapsed <= 20000) {
         const newProgress = (elapsed / 20000) * 80;
         setProgress(Math.min(newProgress, 80));
@@ -43,6 +54,10 @@ export function LoadingBar({ isLoading, isCompleting = false, onComplete }: Load
     interval = setInterval(updateProgress, 100);
 
     return () => {
+      if (resetTimer) {
+        clearTimeout(resetTimer);
+      }
+
       if (interval) {
         clearInterval(interval);
       }
@@ -63,10 +78,10 @@ export function LoadingBar({ isLoading, isCompleting = false, onComplete }: Load
       />
       <div className="text-center mt-2 text-sm text-gray-600">
         {Math.round(progress)}% - {
-          isCompleting ? 'Complete!' : 
-          progress < 80 ? 'Fetching data...' : 
-          progress < 96 ? 'Processing sentiment...' : 
-          'Almost done...'
+          isCompleting ? 'Done' :
+          progress < 80 ? 'Fetching Reddit and price data' :
+          progress < 96 ? 'Scoring the crowd mood' :
+          'Almost there'
         }
       </div>
     </div>
