@@ -1,86 +1,107 @@
-# This file tests tests all functions in fetch_reddit_data.py to ensure they return valid responses.
+from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
-import sys
-import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import fetch_reddit_data
 
-from fetch_reddit_data import get_reddit_data, categorize_sentiment
+
+def test_classify_sentiment_thresholds():
+    assert fetch_reddit_data.classify_sentiment(0.05) == "positive"
+    assert fetch_reddit_data.classify_sentiment(-0.05) == "negative"
+    assert fetch_reddit_data.classify_sentiment(0.049) == "neutral"
+    assert fetch_reddit_data.classify_sentiment(-0.049) == "neutral"
+
+
+def test_format_submission_returns_frontend_contract(monkeypatch):
+    monkeypatch.setattr(fetch_reddit_data.random, "randint", lambda _start, _end: 3)
+    submission = SimpleNamespace(
+        id="abc123",
+        title="NVDA is unstoppable",
+        selftext="Calls everywhere",
+        author=SimpleNamespace(name="valuehunter"),
+        created_utc=1750184049,
+        score=420,
+        num_comments=69,
+        url="https://reddit.com/r/stocks/comments/abc123",
+        subreddit=SimpleNamespace(display_name="stocks"),
+    )
+
+    post = fetch_reddit_data.format_submission(submission)
+
+    assert post["id"] == "abc123"
+    assert post["username"] == "u/valuehunter"
+    assert post["platform"] == "reddit"
+    assert post["sentiment"] in {"positive", "neutral", "negative"}
+    assert isinstance(post["score"], float)
+    assert post["avatar"].endswith("avatar_default_3.png")
+    assert post["subreddit"] == "stocks"
+
 
 @pytest.mark.asyncio
-async def test_get_reddit_data():
-    posts = await get_reddit_data("NVDA", limit=5)
-    assert isinstance(posts, list), "Response should be a list"
-    assert len(posts) <= 5, "Response should contain at most 5 posts"
-    for post in posts:
-        assert "id" in post, "Post should contain 'id'"
-        assert "username" in post, "Post should contain 'username'"
-        assert "handle" in post, "Post should contain 'handle'"
-        assert "avatar" in post, "Post should contain 'avatar'"
-        assert "content" in post, "Post should contain 'content'"
-        assert "platform" in post, "Post should contain 'platform'"
-        assert "date" in post, "Post should contain 'date'"
-        assert "sentiment" in post, "Post should contain 'sentiment'"
-        assert "score" in post, "Post should contain 'score'"
-        assert "likes" in post, "Post should contain 'likes'"
-        assert "comments" in post, "Post should contain 'comments'"
-        assert "url" in post, "Post should contain 'url'"
-        assert "subreddit" in post, "Post should contain 'subreddit'"
-        
-        assert isinstance(post["id"], str), "'id' should be a string"
-        assert isinstance(post["username"], str), "'username' should be a string"
-        assert isinstance(post["handle"], str), "'handle' should be a string"
-        assert isinstance(post["avatar"], str), "'avatar' should be a string"
-        assert isinstance(post["content"], str), "'content' should be a string"
-        assert post["platform"] == "reddit", "'platform' should be 'reddit'"
-        assert isinstance(post["date"], (int, float)), "'date' should be a number"
-        assert post["sentiment"] in ["positive", "negative", "neutral"], "'sentiment' should be valid category"
-        assert isinstance(post["score"], float), "'score' should be a float"
-        assert isinstance(post["likes"], int), "'likes' should be an integer"
-        assert isinstance(post["comments"], int), "'comments' should be an integer"
-        assert isinstance(post["url"], str), "'url' should be a string"
-        assert isinstance(post["subreddit"], str), "'subreddit' should be a string"
-        
-        assert "redditstatic.com/avatars/defaults/v2/avatar_default_" in post["avatar"], "Avatar should be a default Reddit avatar"
-        assert post["avatar"].endswith(".png"), "Avatar should be a PNG file"
+async def test_categorize_sentiment_uses_normalized_labels(monkeypatch):
+    async def fake_posts(_ticker, limit=10):
+        return [
+            {"score": 0.7},
+            {"score": 0.3},
+        ]
+
+    monkeypatch.setattr(fetch_reddit_data, "get_reddit_data", fake_posts)
+
+    result = await fetch_reddit_data.categorize_sentiment("NVDA")
+
+    assert result["label"] == "positive"
+    assert result["sentiment"] == "Bullish market sentiment"
+    assert result["displayLabel"] == "Bullish Reddit mood"
+    assert result["score"] == pytest.approx(0.5)
+    assert result["postCount"] == 2
+
 
 @pytest.mark.asyncio
-async def test_get_reddit_data_empty_ticker():
-    """Test with empty ticker should still return a list"""
-    posts = await get_reddit_data("", limit=5)
-    assert isinstance(posts, list), "Response should be a list even with empty ticker"
+async def test_categorize_sentiment_handles_no_posts(monkeypatch):
+    async def fake_posts(_ticker, limit=10):
+        return []
+
+    monkeypatch.setattr(fetch_reddit_data, "get_reddit_data", fake_posts)
+
+    result = await fetch_reddit_data.categorize_sentiment("EMPTY")
+
+    assert result == {
+        "sentiment": "No market sentiment",
+        "label": "neutral",
+        "displayLabel": "No Reddit posts found",
+        "score": 0.0,
+        "postCount": 0,
+    }
+
 
 @pytest.mark.asyncio
-async def test_get_reddit_data_limit():
-    """Test that limit parameter is respected"""
-    posts = await get_reddit_data("AAPL", limit=3)
-    assert len(posts) <= 3, "Response should respect the limit parameter"
+async def test_get_sentiment_timeseries_groups_recent_posts(monkeypatch):
+    now = datetime.now(timezone.utc)
+    today = now.timestamp()
+    yesterday = (now - timedelta(days=1)).timestamp()
 
-@pytest.mark.asyncio
-async def test_categorize_sentiment():
-    sentiment = await categorize_sentiment("NVDA")
-    assert isinstance(sentiment, dict), "Response should be a dictionary"
-    assert "sentiment" in sentiment, "Response should contain 'sentiment'"
-    assert "score" in sentiment, "Response should contain 'score'"
-    assert isinstance(sentiment["score"], float), "'score' should be a float"
-    
-    valid_sentiments = [
-        "Bullish market sentiment",
-        "Bearish market sentiment", 
-        "Neutral market sentiment",
-        "No market sentiment"
-    ]
-    assert sentiment["sentiment"] in valid_sentiments, f"Sentiment should be one of {valid_sentiments}"
-    
-    assert 0 <= sentiment["score"] <= 1.5, "Score should be between 0 and 1.5"
+    async def fake_posts(_ticker, limit=50):
+        return [
+            {"date": today, "score": 0.4},
+            {"date": today, "score": 0.2},
+            {"date": yesterday, "score": -0.4},
+        ]
 
-@pytest.mark.asyncio
-async def test_categorize_sentiment_no_posts():
-    """Test sentiment categorization when no posts are found"""
-    # this ticker should not have posts (hopefully lol)
-    sentiment = await categorize_sentiment("kasjdflkssajfklsajflksadjf")
-    assert sentiment["sentiment"] == "No market sentiment", "Should return 'No market sentiment' for no posts"
-    assert sentiment["score"] == 0.5, "Score should be 0.5 for no posts"
+    monkeypatch.setattr(fetch_reddit_data, "get_reddit_data", fake_posts)
+
+    series = await fetch_reddit_data.get_sentiment_timeseries("AAPL", days=2)
+
+    assert len(series) == 3
+    assert series[-1]["score"] == pytest.approx(0.3)
+    assert series[-1]["sentiment"] == "positive"
+    assert series[-1]["post_count"] == 2
+    assert series[-2]["sentiment"] == "negative"
 
 
+def test_get_async_reddit_requires_credentials(monkeypatch):
+    monkeypatch.setattr(fetch_reddit_data, "app_id", None)
+    monkeypatch.setattr(fetch_reddit_data, "client_secret", None)
+
+    with pytest.raises(RuntimeError, match="Reddit credentials"):
+        fetch_reddit_data.get_async_reddit()

@@ -1,155 +1,100 @@
 # StockSentiment
 
-A full-stack application for analyzing and visualizing stock sentiment from Reddit posts and financial data.
+StockSentiment is a free experiment for comparing Reddit stock chatter with real price movement.
 
-🌐 **Live Site**: [https://stock-sentiment-eosin.vercel.app/](https://stock-sentiment-eosin.vercel.app/)
+After hearing so many stories about WallStreetBets moving markets, I wanted to see whether the crowd was actually useful at predicting stock direction. The app lets someone enter a ticker, pulls recent Reddit posts that mention it, scores the posts with VADER sentiment, and lines that mood up against Defeat Beta market data.
 
-## Deployment
+Sometimes Reddit looks early. Sometimes it looks late. Sometimes it is wrong enough that the inverse signal is the interesting part.
 
-- **Frontend**: Deployed on Vercel at [https://stock-sentiment-eosin.vercel.app/](https://stock-sentiment-eosin.vercel.app/)
-- **Backend**: Deployed on AWS EC2 instance (And Render)
+Live site: https://stock-sentiment-eosin.vercel.app/
 
 ## Project Structure
 
-- **backend/**: FastAPI server providing stock and sentiment APIs
-- **frontend/**: Next.js + Tailwind CSS dashboard UI
+- `backend/`: FastAPI API, Reddit/Defeat Beta provider calls, sentiment scoring, aggregation metrics.
+- `frontend/`: Next.js dashboard and homepage.
+- `mobileView/`: Expo WebView wrapper around the web app.
 
----
+## Backend API
 
-## Backend (FastAPI)
+Current hosted backend: https://stocksentiment-omux.onrender.com
 
-### API Endpoints
-#### Current backend URL
-https://stocksentiment-omux.onrender.com
-#### `GET /api/stock/{ticker}`
+### `GET /api/analysis/{ticker}?period=1mo&days=30&limit=30`
 
-Returns stock info and price history for a given ticker (uses Yahoo Finance).
-
-**Response Example:**
+Returns the normalized dashboard payload:
 
 ```json
 {
-  "info": { ... },
-  "history": [ { ... }, ... ]
+  "ticker": "GME",
+  "stock": {},
+  "sentiment": {},
+  "sentimentSeries": [],
+  "posts": [],
+  "metrics": {},
+  "generatedAt": "2026-06-15T00:00:00Z",
+  "sources": ["Defeat Beta API", "Reddit", "VADER"],
+  "partialErrors": []
 }
 ```
 
-#### `GET /api/reddit/{ticker}?limit=10`
+Legacy endpoints still exist:
 
-Fetches recent Reddit posts mentioning the ticker. Each post includes sentiment analysis.
+- `GET /api/stock/{ticker}`
+- `GET /api/reddit/{ticker}?limit=30`
+- `GET /api/redditSentiment/{ticker}`
+- `GET /api/sentimentTimeseries/{ticker}?days=30`
 
-**Response Example:**
+## Environment
 
-```json
-[
-  {
-    "id": "abc123",
-    "title": "NVDA to the moon!",
-    "content": "...",
-    "url": "...",
-    "sentiment": { "compound": 0.7, ... }
-  },
-  ...
-]
+Backend:
+
+```sh
+REDDIT_CLIENT_ID=...
+REDDIT_CLIENT_SECRET=...
 ```
 
-#### `GET /api/redditSentiment/{ticker}`
+Frontend:
 
-Returns overall Reddit sentiment for the ticker (bullish, bearish, or neutral).
-
-**Response Example:**
-
-```json
-{
-  "sentiment": "Bullish market sentiment",
-  "score": 0.8
-}
+```sh
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-#### `GET /api/sentimentTimeseries/{ticker}?days=30`
+Mobile:
 
-Returns sentiment data over time for the specified ticker. The `days` parameter is optional (default: 30).
-
-**Response Example:**
-
-```json
-[
-  {
-    "date": "2025-06-23",
-    "sentiment_score": 0.8,
-    "post_count": 15
-  },
-  ...
-]
+```sh
+EXPO_PUBLIC_STOCKSENTIMENT_URL=https://stock-sentiment-eosin.vercel.app/
 ```
 
----
+## Running Locally
 
-## Development
-
-### .env files
-
-Backend: 
-- REDDIT_CLIENT_ID 
-- REDDIT_CLIENT_SECRET
-
-Frontend: If you don't want to run the backend you can use
-- NEXT_PUBLIC_API_URL = https://stocksentiment-omux.onrender.com
-
-### Running Backend Locally
-
-1. Navigate to the backend directory:
+Backend:
 
 ```sh
 cd backend
-```
-
-2. Install dependencies:
-
-```sh
+python -m venv .venv
+. .venv/bin/activate
 pip install -r requirements.txt
-```
-
-3. Run the FastAPI server:
-
-```sh
 python server.py
 ```
 
-The backend will be available at `http://localhost:8000`
-
-### Running Frontend Locally
-
-1. Navigate to the frontend directory:
+Frontend:
 
 ```sh
 cd frontend
-```
-
-2. Install dependencies:
-
-```sh
 npm install
-```
-
-3. Run the development server:
-
-```sh
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:3000`
+## Tests
 
-## Running Tests
-
-### Backend
-
-Backend tests are written using [pytest](https://docs.pytest.org/).  
-To run all backend tests:
+Backend tests use mocked provider data by default, so they do not depend on Reddit or market data providers responding during CI.
 
 ```sh
 cd backend
-pytest tests/ -v
+pytest
 ```
 
-Test files are located in the `backend/tests/` directory
+## Caveats
+
+- This is not financial advice.
+- Reddit sentiment is noisy and easy to misread.
+- The hosted backend runs on Render, so the first request may cold-start and take about a minute.

@@ -1,239 +1,128 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowDown, ArrowUp, TrendingDown, TrendingUp } from "lucide-react"
+import type React from 'react';
+import { Activity, Building2, Gauge, LineChart, TrendingDown, TrendingUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { AnalysisMetrics, SentimentSummary, StockSummary } from '@/lib/api';
+import { formatCompactNumber, formatCurrency, formatPercent } from '@/lib/format';
 
 interface StockInfoProps {
-  data: {
-    ticker: string
-    price: number
-    ask?: number
-    change: number
-    changePercent: number
-    overallSentiment: "positive" | "negative" | "neutral"
-    sentimentScore: number
-    volume?: number
-    marketCap?: number
-    fiftyTwoWeekLow?: number
-    fiftyTwoWeekHigh?: number
-    peRatio?: number
-    forwardPE?: number
-    dividendYield?: number
-    beta?: number
-    dayLow?: number
-    dayHigh?: number
-    averageVolume?: number
-    sector?: string
-    industry?: string
-  }
+  stock: StockSummary | null;
+  sentiment: SentimentSummary;
+  metrics: AnalysisMetrics;
 }
 
-export function StockInfo({ data }: StockInfoProps) {
-  const isPositive = data.change >= 0
-  const sentimentColor = {
-    positive: "bg-green-100 text-green-800",
-    negative: "bg-red-100 text-red-800",
-    neutral: "bg-gray-100 text-gray-800",
+const sentimentTone = {
+  positive: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  negative: 'bg-rose-50 text-rose-800 border-rose-200',
+  neutral: 'bg-zinc-100 text-zinc-700 border-zinc-200',
+};
+
+export function StockInfo({ stock, sentiment, metrics }: StockInfoProps) {
+  if (!stock) {
+    return (
+      <Card className="rounded-xl border-zinc-200 bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle>Stock data</CardTitle>
+          <CardDescription>Market data did not return usable stock data.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
   }
 
-  const displayPrice = (data.price === 0 && data.ask && data.ask > 0) ? data.ask : data.price
-  const priceLabel = (data.price === 0 && data.ask && data.ask > 0) ? "Ask Price" : "Current Price"
-
-  const formatVolume = (volume?: number) => {
-    if (!volume || volume === 0) return 'Unknown'
-    if (volume >= 1000000) return `${(volume / 1000000).toFixed(1)}M`
-    if (volume >= 1000) return `${(volume / 1000).toFixed(1)}K`
-    return volume.toLocaleString()
-  }
-
-  const formatMarketCap = (marketCap?: number) => {
-    if (!marketCap || marketCap === 0) return 'Unknown'
-    if (marketCap >= 1000000000000) return `$${(marketCap / 1000000000000).toFixed(2)}T`
-    if (marketCap >= 1000000000) return `$${(marketCap / 1000000000).toFixed(2)}B`
-    if (marketCap >= 1000000) return `$${(marketCap / 1000000).toFixed(2)}M`
-    return `$${marketCap.toLocaleString()}`
-  }
-
-  const formatPercentage = (value?: number) => {
-    if (value === undefined || value === null || value === 0) return 'Unknown'
-    return `${(value * 100).toFixed(2)}%`
-  }
-
-  const formatNumber = (value?: number, decimals: number = 2) => {
-    if (value === undefined || value === null || value === 0) return 'Unknown'
-    return value.toFixed(decimals)
-  }
-
-  const formatPrice = (value?: number) => {
-    if (value === undefined || value === null || value === 0) return 'Unknown'
-    return `$${value.toFixed(2)}`
-  }
+  const isPositive = (stock.change ?? 0) >= 0;
 
   return (
-    <Card className="max-w-full overflow-hidden">
+    <Card className="rounded-xl border-zinc-200 bg-white shadow-sm">
       <CardHeader>
-        <CardTitle className="truncate">{data.ticker}</CardTitle>
+        <CardTitle className="flex items-center justify-between gap-3">
+          <span className="truncate">{stock.symbol}</span>
+          <Badge className={sentimentTone[sentiment.label]} variant="outline">
+            {sentiment.label}
+          </Badge>
+        </CardTitle>
         <CardDescription className="truncate">
-          {data.sector && data.industry && data.sector !== 'Unknown' && data.industry !== 'Unknown' 
-            ? `${data.sector} • ${data.industry}` 
-            : 'Stock Information'}
+          {stock.sector && stock.industry ? `${stock.sector} / ${stock.industry}` : 'Stock snapshot'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="max-w-full overflow-hidden">
-        <div className="h-[350px] sm:h-[350px] lg:h-[500px] max-w-full overflow-hidden overflow-y-auto">
-          <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium">{priceLabel}</p>
-            <div
-              className="
-                flex items-baseline
-                flex-col md:flex-col lg:flex-row
-                md:items-start lg:items-baseline
-              "
-            >
-              <span className="text-2xl font-bold">
-                {displayPrice > 0 ? `$${displayPrice.toFixed(2)}` : 'Unknown'}
+      <CardContent className="space-y-5">
+        <div>
+          <p className="text-sm font-medium text-zinc-500">Current price</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-2">
+            <span className="text-3xl font-semibold tracking-tight">{formatCurrency(stock.currentPrice)}</span>
+            {stock.change !== null && stock.change !== undefined ? (
+              <span className={`inline-flex items-center text-sm font-medium ${isPositive ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {isPositive ? <TrendingUp className="mr-1 h-4 w-4" /> : <TrendingDown className="mr-1 h-4 w-4" />}
+                {formatCurrency(stock.change)} ({formatPercent(stock.changePercent, { signed: true })})
               </span>
-              {displayPrice > 0 && (
-                <span
-                  className={`
-                    ml-0 mt-1 md:ml-0 md:mt-1 lg:ml-2 lg:mt-0
-                    flex items-center text-sm
-                    ${isPositive ? "text-green-600" : "text-red-600"}
-                  `}
-                >
-                  {isPositive ? <ArrowUp className="mr-1 h-3 w-3" /> : <ArrowDown className="mr-1 h-3 w-3" />}
-                  {Math.abs(data.change).toFixed(2)} ({Math.abs(data.changePercent).toFixed(2)}%)
-                </span>
-              )}
-            </div>
+            ) : null}
           </div>
+        </div>
 
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-sm font-medium mb-2">Sentiment Analysis</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Badge className={sentimentColor[data.overallSentiment]}>
-                  {data.overallSentiment.charAt(0).toUpperCase() + data.overallSentiment.slice(1)}
-                </Badge>
-                <span className="text-xs font-mono">{data.sentimentScore.toFixed(3)}</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${data.sentimentScore > 0 ? "bg-green-600" : data.sentimentScore < 0 ? "bg-red-600" : "bg-gray-400"}`}
-                    style={{ width: `${Math.min(Math.abs(data.sentimentScore) * 100, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div className="flex items-center text-xs">
-                {data.sentimentScore >= 0.05 ? (
-                  <>
-                    <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                    <span className="text-green-600">Bullish</span>
-                  </>
-                ) : data.sentimentScore <= -0.05 ? (
-                  <>
-                    <TrendingDown className="h-4 w-4 text-red-600 mr-1" />
-                    <span className="text-red-600">Bearish</span>
-                  </>
-                ) : (
-                  <>
-                    <TrendingUp className="h-4 w-4 text-gray-500 mr-1" />
-                    <span className="text-gray-500">Neutral</span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+        <div className="divide-y divide-zinc-200 border-y border-zinc-200 text-sm">
+          <SignalRow
+            label="Price move"
+            value={formatPercent(metrics.priceChangePercent, { signed: true })}
+            detail={`${formatCurrency(metrics.priceChange)} over the analysis window`}
+          />
+          <SignalRow
+            label="Signal"
+            value={formatInverseSignal(metrics.inverseSignal)}
+            detail={`${formatAlignment(metrics.alignment)}. ${metrics.alignmentLabel}`}
+          />
+        </div>
 
-          {(data.dayLow && data.dayLow > 0) && (data.dayHigh && data.dayHigh > 0) ? (
-            <div>
-              <p className="text-sm font-medium">Day Range</p>
-              <p className="text-sm text-gray-600">
-                ${data.dayLow.toFixed(2)} - ${data.dayHigh.toFixed(2)}
-              </p>
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm font-medium">Day Range</p>
-              <p className="text-sm text-gray-600">Unknown</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs font-medium">Volume</p>
-              <p className="text-sm text-gray-600">{formatVolume(data.volume)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium">Avg Volume</p>
-              <p className="text-sm text-gray-600">{formatVolume(data.averageVolume)}</p>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-sm font-medium">Market Cap</p>
-            <p className="text-sm text-gray-600">{formatMarketCap(data.marketCap)}</p>
-          </div>
-
-          {(data.fiftyTwoWeekLow && data.fiftyTwoWeekLow > 0) && (data.fiftyTwoWeekHigh && data.fiftyTwoWeekHigh > 0) ? (
-            <div>
-              <p className="text-sm font-medium">52 Week Range</p>
-              <div className="mt-1">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>${data.fiftyTwoWeekLow.toFixed(2)}</span>
-                  <span>${data.fiftyTwoWeekHigh.toFixed(2)}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full relative"
-                    style={{ 
-                      width: '100%'
-                    }}
-                  >
-                    <div 
-                      className="absolute top-0 w-1 h-2 bg-blue-800 rounded-full"
-                      style={{ 
-                        left: `${((displayPrice - data.fiftyTwoWeekLow) / (data.fiftyTwoWeekHigh - data.fiftyTwoWeekLow)) * 100}%`,
-                        transform: 'translateX(-50%)'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm font-medium">52 Week Range</p>
-              <p className="text-sm text-gray-600">Unknown</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs font-medium">P/E Ratio</p>
-              <p className="text-sm text-gray-600">{formatNumber(data.peRatio)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium">Forward P/E</p>
-              <p className="text-sm text-gray-600">{formatNumber(data.forwardPE)}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs font-medium">Beta</p>
-              <p className="text-sm text-gray-600">{formatNumber(data.beta)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium">Dividend Yield</p>
-              <p className="text-sm text-gray-600">{formatPercentage(data.dividendYield)}</p>
-            </div>
-          </div>
-          </div>
+        <div className="grid gap-3 text-sm">
+          <InfoRow icon={<Activity className="h-4 w-4" />} label="Volume" value={formatCompactNumber(stock.volume)} />
+          <InfoRow icon={<Building2 className="h-4 w-4" />} label="Market cap" value={formatCompactNumber(stock.marketCap)} />
+          <InfoRow icon={<LineChart className="h-4 w-4" />} label="52 week low" value={formatCurrency(stock.fiftyTwoWeekLow)} />
+          <InfoRow icon={<LineChart className="h-4 w-4" />} label="52 week high" value={formatCurrency(stock.fiftyTwoWeekHigh)} />
+          <InfoRow icon={<Gauge className="h-4 w-4" />} label="P/E ratio" value={stock.peRatio?.toFixed(2) || 'Unknown'} />
+          <InfoRow icon={<Gauge className="h-4 w-4" />} label="Beta" value={stock.beta?.toFixed(2) || 'Unknown'} />
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
+function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-zinc-100 bg-white px-3 py-2">
+      <span className="inline-flex items-center gap-2 text-zinc-500">
+        {icon}
+        {label}
+      </span>
+      <span className="font-medium text-zinc-950">{value}</span>
+    </div>
+  );
+}
+
+function SignalRow({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="py-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-medium text-zinc-500">{label}</p>
+        <p className="text-right text-sm font-semibold text-zinc-950">{value}</p>
+      </div>
+      <p className="mt-1 text-xs leading-5 text-zinc-500">{detail}</p>
+    </div>
+  );
+}
+
+function formatAlignment(value: AnalysisMetrics['alignment']) {
+  return {
+    aligned: 'Aligned',
+    inverse: 'Inverse watch',
+    mixed: 'Mixed',
+    insufficient_data: 'Not enough data',
+  }[value];
+}
+
+function formatInverseSignal(value: string) {
+  return {
+    strong: 'Strong inverse',
+    watch: 'Worth watching',
+    none: 'No inverse read',
+    unclear: 'Unclear',
+    unknown: 'Unknown',
+  }[value] || value;
+}
