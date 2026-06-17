@@ -16,7 +16,7 @@ app_id = os.getenv("REDDIT_CLIENT_ID")
 client_secret = os.getenv("REDDIT_CLIENT_SECRET")
 
 analyzer = SentimentIntensityAnalyzer()
-_reddit_cache = TTLCache[list[dict[str, Any]]](ttl_seconds=180)
+_reddit_cache = TTLCache[list[dict[str, Any]]](ttl_seconds=86400)
 
 
 def classify_sentiment(score: float) -> SentimentLabel:

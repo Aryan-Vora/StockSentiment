@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { Spinner } from '@/components/ui/kibo-ui/spinner';
 import { DashboardClient } from './dashboard-client';
 
 export default function DashboardPage() {
@@ -11,8 +12,8 @@ export default function DashboardPage() {
 
 function DashboardFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f8f7f2] text-zinc-700">
-      Loading the experiment...
+    <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+      <Spinner variant="ring" />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import pandas as pd
 from cache import TTLCache
 
 
-_stock_cache = TTLCache[dict[str, Any]](ttl_seconds=300)
+_stock_cache = TTLCache[dict[str, Any]](ttl_seconds=86400)
 PERIOD_DAYS = {
     "5d": 5,
     "1mo": 31,
