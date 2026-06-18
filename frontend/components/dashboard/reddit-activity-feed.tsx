@@ -97,6 +97,10 @@ function RedditEvidencePost({ post }: { post: RedditPost }) {
     shouldTruncate && !isExpanded
       ? `${post.content.substring(0, maxContentLength)}...`
       : post.content;
+  const contentBlocks = displayContent
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
 
   return (
     <article className="rounded-lg border bg-background/72 p-4 transition hover:border-primary/35">
@@ -129,9 +133,13 @@ function RedditEvidencePost({ post }: { post: RedditPost }) {
         </div>
       </div>
 
-      <p className="mt-4 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">
-        {displayContent}
-      </p>
+      <div className="mt-4 space-y-2 break-words text-sm leading-5 text-muted-foreground">
+        {contentBlocks.map((block, index) => (
+          <p className="whitespace-pre-line" key={`${post.id}-content-${index}`}>
+            {block}
+          </p>
+        ))}
+      </div>
 
       <div className="mt-1.5 flex flex-col items-start gap-3">
         {shouldTruncate ? (
